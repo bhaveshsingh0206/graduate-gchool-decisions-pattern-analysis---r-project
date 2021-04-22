@@ -1,0 +1,147 @@
+---
+title: "Graduate School Decisions Pattern Analysis"
+author:
+  - Ali Abbas Rizvi 60003170005
+  - Bhavesh Singh 60003170012
+  -  Himanshu Ashar 60003170021
+
+date: "4/21/2021"
+output: html_document
+---
+
+
+
+## Importing dependencies
+```{r import}
+options(warn=-1)
+suppressMessages(library(ggplot2)) #Data Visualization
+suppressMessages(library(ggthemes)) #Data Visualization
+suppressMessages(library(dplyr)) #Data Manipulation
+suppressMessages(library(corrgram)) #Data Visualization
+suppressMessages(library(corrplot)) #Graphical Display and Data Visualization
+suppressMessages(library(caTools)) # Statistics eg. split data into Test and Train Set
+library(readr)
+```
+
+## Reading dataset
+```{r dataset}
+dataset <- read_csv("Admission_Predict_Ver1.1.csv")
+
+head(dataset)
+str(dataset)
+```
+##Data Processing
+```{r}
+dataset <- select (dataset,-c(Serial.No.))
+
+#I want to know the descriptive statistics of the data
+summary(dataset)
+```
+Check for missing values
+
+```{r}
+any(is.na(dataset))
+```
+
+```{r}
+#Visualize the data to see the relationship between variables
+num.col <- sapply(dataset, is.numeric)
+cor.data <- cor(dataset[,num.col])
+print(cor.data)
+print(corrplot(cor.data, method = 'color'))
+
+ggplot(dataset, aes(x=Chance.of.Admit)) + 
+    geom_histogram(aes(y=..density..),      
+                   bins = 20,
+                   colour="black", fill="skyblue") +
+    geom_density(alpha=.2, fill="#FF6666") + 
+  ggtitle('Frequency distribution of Chance of Admit')
+```
+
+
+```{r}
+ggplot(dataset,aes(GRE.Score,color=factor(Research)))+geom_density(size=2)+ggtitle("GRE vs Research Distribution")
+```
+
+```{r}
+ggplot(dataset,aes(GRE.Score,Chance.of.Admit))+geom_point()+geom_smooth()+ggtitle("GRE vs Admit Chance")
+```
+
+```{r}
+ggplot(dataset,aes(TOEFL.Score,Chance.of.Admit))+geom_point()+geom_smooth()+ggtitle("TOEFL vs Admit Chance")
+```
+
+```{r}
+boxplot(dataset$GRE.Score,col="#0099FF",
+        horizontal=TRUE,xlab="GRE",main="Boxplot for GRE")
+
+hist(dataset$GRE.Score,col="#0099FF",
+     xlab="GRE",
+     ylab="Frequency",
+     main="Histogram for GRE",
+     labels=TRUE)
+```
+
+```{r}
+boxplot(dataset$TOEFL.Score,col="#FFCC66",
+        horizontal=TRUE,xlab="TOFEL",main="Boxplot for TOEFL")
+
+hist(dataset$TOEFL.Score,col="#FFCC66",
+     xlab="TOEFL",
+     ylab="Frequency",
+     main="Histogram for TOEFL",
+     labels=TRUE)
+```
+
+```{r}
+ggplot(dataset,aes(CGPA,Chance.of.Admit ))+geom_point(color="#339966")+facet_grid(Research~.)
+```
+
+##-----------Model Prediction#-----------
+##Spliting the dataset
+
+```{r}
+set.seed(123)
+split = sample.split(dataset$Chance.of.Admit, SplitRatio = 0.7)
+
+training_set = subset(dataset, split == TRUE)
+#70%  of the dataset will be used for training
+
+test_set = subset(dataset, split == FALSE)
+#30% of the dataset will be used for testing
+```
+Building the multiple regression model
+```{r}
+model = lm(formula = Chance.of.Admit ~ .,data = training_set)
+
+summary(model)
+
+#Predicting the Test set results
+y_pred = predict(model, newdata = test_set)
+y_pred
+```
+
+```{r}
+prediction <- predict(model,test_set)
+
+results <- cbind(prediction, test_set$Chance.of.Admit)
+colnames(results) <- c('Predicted', 'Actual')
+print(results)
+
+```
+
+##Random Forest Model
+```{r}
+library(randomForest)
+rf<-randomForest(Chance.of.Admit~.,data=training_set,importance=TRUE)
+print(rf)
+importance(rf)
+varImpPlot(rf)
+pred_rf <- predict(rf, test_set)
+```
+
+```{r}
+results <- cbind(pred_rf, test_set$Chance.of.Admit)
+colnames(results) <- c('Predicted', 'Actual')
+print(results)
+```

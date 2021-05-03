@@ -1,17 +1,19 @@
 ---
 title: "Graduate School Decisions Pattern Analysis"
 author:
-  - Ali Abbas Rizvi 60003170005
-  - Bhavesh Singh 60003170012
-  -  Himanshu Ashar 60003170021
-
+- Ali Abbas Rizvi 60003170005
+- Bhavesh Singh 60003170012
+- Himanshu Ashar 60003170021
 date: "4/21/2021"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 
 
-## Importing dependencies
+## Importing dependencies:
+Importing various tools in order to perform data visualization, graphical display and data manipulation.
 ```{r import}
 options(warn=-1)
 suppressMessages(library(ggplot2)) #Data Visualization
@@ -23,32 +25,39 @@ suppressMessages(library(caTools)) # Statistics eg. split data into Test and Tra
 library(readr)
 ```
 
-## Reading dataset
+##Reading dataset:
+Importing all columns contained in the dataset (in CSV format).
 ```{r dataset}
 dataset <- read_csv("Admission_Predict_Ver1.1.csv")
 
 head(dataset)
 str(dataset)
 ```
-##Data Processing
+##Data Processing:
+Summarizing various crucial properties of the data, by measuring the following quantities: minimum and maximum value, mean, median, first quartile and third quartile.
 ```{r}
 dataset <- select (dataset,-c(Serial.No.))
 
 #I want to know the descriptive statistics of the data
 summary(dataset)
 ```
-Check for missing values
-
+##Check for missing values:
+Ensuring the dataset does not contain rows having any empty attributes.
 ```{r}
 any(is.na(dataset))
 ```
-
+##Correlation Matrix:
+This matrix has both the number of rows and columns each equal to the number of attributes. The value of any particular cell denotes the level of correlation of the two attributes represented by the row and column respectively.
 ```{r}
 #Visualize the data to see the relationship between variables
 num.col <- sapply(dataset, is.numeric)
 cor.data <- cor(dataset[,num.col])
 print(cor.data)
 print(corrplot(cor.data, method = 'color'))
+```
+##Frequency distribution of chance of admit:
+A graph depicting the distribution of all candidates, with the x axis denoting the probability of receiving an admit.
+```{r}
 
 ggplot(dataset, aes(x=Chance.of.Admit)) + 
     geom_histogram(aes(y=..density..),      
@@ -58,23 +67,34 @@ ggplot(dataset, aes(x=Chance.of.Admit)) +
   ggtitle('Frequency distribution of Chance of Admit')
 ```
 
-
+##GRE vs Research distribution:
+Comparing the frequency distributions by separately taking the candidates’ GRE scores and research papers as factors on the x axis.
 ```{r}
 ggplot(dataset,aes(GRE.Score,color=factor(Research)))+geom_density(size=2)+ggtitle("GRE vs Research Distribution")
 ```
+##GRE vs admit chance:
+A scatter plot indicating the GRE scores of candidates along the x-axis and the chance of an admit along the y-axis, subsequently forming an overall inclining pattern, which symbolises that a higher GRE score increases one’s chances of an admit.
 
 ```{r}
 ggplot(dataset,aes(GRE.Score,Chance.of.Admit))+geom_point()+geom_smooth()+ggtitle("GRE vs Admit Chance")
 ```
 
+##TOEFL vs admit chance:
+Similar to the above figure, a scatter plot indicating the TOEFL scores of candidates along the x-axis and the chance of an admit along the y-axis, subsequently forming an overall inclining pattern, which symbolises that a higher TOEFL score increases one’s chances of an admit.
 ```{r}
 ggplot(dataset,aes(TOEFL.Score,Chance.of.Admit))+geom_point()+geom_smooth()+ggtitle("TOEFL vs Admit Chance")
 ```
 
+##Boxplot for GRE:
+The five number summary of all GRE scores: the minimum and maximum values, the first and third quartiles, and the median.
 ```{r}
 boxplot(dataset$GRE.Score,col="#0099FF",
         horizontal=TRUE,xlab="GRE",main="Boxplot for GRE")
+```
 
+#Histogram for GRE:
+This graph shows the number of students scoring in a particular range (with GRE scores indicated along the x-axis).
+```{r}
 hist(dataset$GRE.Score,col="#0099FF",
      xlab="GRE",
      ylab="Frequency",
@@ -82,10 +102,16 @@ hist(dataset$GRE.Score,col="#0099FF",
      labels=TRUE)
 ```
 
+##Boxplot for TOEFL:
+The five number summary of all TOEFL scores: the minimum and maximum values, the first and third quartiles, and the median.
 ```{r}
 boxplot(dataset$TOEFL.Score,col="#FFCC66",
         horizontal=TRUE,xlab="TOFEL",main="Boxplot for TOEFL")
+```
 
+##Histogram for TOEFL:
+This graph shows the number of students scoring in a particular range (with TOEFL scores indicated along the x-axis).
+```{r}
 hist(dataset$TOEFL.Score,col="#FFCC66",
      xlab="TOEFL",
      ylab="Frequency",
@@ -93,13 +119,17 @@ hist(dataset$TOEFL.Score,col="#FFCC66",
      labels=TRUE)
 ```
 
+##CGPA vs Chance of admit:
+A dual scatter plot diagram, with the one above indicating the relation between CGPAs and chances of admits for students who have not conducted any research activities, and the lower one indicating the same for students who have conducted some research or the other.
+Looking at the graphs, it is clear that students with research activities have a higher chance of securing an admit.
+
 ```{r}
 ggplot(dataset,aes(CGPA,Chance.of.Admit ))+geom_point(color="#339966")+facet_grid(Research~.)
 ```
 
-##-----------Model Prediction#-----------
-##Spliting the dataset
 
+##Splitting the dataset:
+The training set and testing set contain 30% 
 ```{r}
 set.seed(123)
 split = sample.split(dataset$Chance.of.Admit, SplitRatio = 0.7)
@@ -110,7 +140,9 @@ training_set = subset(dataset, split == TRUE)
 test_set = subset(dataset, split == FALSE)
 #30% of the dataset will be used for testing
 ```
-Building the multiple regression model
+
+##Building the Multiple Regression Model
+
 ```{r}
 model = lm(formula = Chance.of.Admit ~ .,data = training_set)
 
@@ -130,7 +162,7 @@ print(results)
 
 ```
 
-##Random Forest Model
+##Building theRandom Forest Model
 ```{r}
 library(randomForest)
 rf<-randomForest(Chance.of.Admit~.,data=training_set,importance=TRUE)
